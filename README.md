@@ -13,7 +13,8 @@ curl -fsSL https://raw.githubusercontent.com/jerethom/claude-setup/main/install.
 Le script va :
 - Installer [mise](https://mise.run) (si non présent)
 - Copier la configuration `.claude` dans ton projet
-- Copier `mise.toml` et `mcp.docker-compose.yml` à la racine
+- Copier `mise.toml`, `mcp.docker-compose.yml` et `.cgcignore` à la racine
+- Ajouter le contenu de `.cgcignore` au `.gitignore` du projet
 - Lancer `mise setup` pour installer les dépendances
 
 ## Utilisation
