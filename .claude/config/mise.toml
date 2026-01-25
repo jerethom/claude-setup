@@ -1,0 +1,75 @@
+[tasks.setup]
+depends = [
+  "config",
+  "voltagent",
+  "setup:cgc",
+  "setup:demongrep",
+]
+
+[tasks.config]
+run = """
+cp .claude/config/mise.toml mise.toml
+cp .claude/config/mcp.docker-compose.yml mcp.docker-compose.yml
+"""
+
+[tasks."setup:demongrep"]
+run = """
+mkdir -p ~/.github.com/yxanul
+cd ~/.github.com/yxanul
+git clone https://github.com/yxanul/demongrep.git || true
+cd demongrep
+git pull
+mise exec rust@1.93.0 -- cargo build --release
+"""
+
+[tasks."setup:cgc"]
+run = [
+  "mise exec python@3.14.2 -- pip install codegraphcontext",
+]
+
+[tasks."voltagent"]
+run = """
+claude plugin marketplace add VoltAgent/awesome-claude-code-subagents || true
+claude plugin install voltagent-core-dev
+claude plugin install voltagent-lang
+claude plugin install voltagent-infra
+claude plugin install voltagent-qa-sec
+claude plugin install voltagent-data-ai
+claude plugin install voltagent-dev-exp
+claude plugin install voltagent-domains
+claude plugin install voltagent-biz
+claude plugin install voltagent-meta
+claude plugin install voltagent-research
+"""
+
+[tasks.docker]
+run = "docker compose -f mcp.docker-compose.yml up -d"
+
+[tasks.mcps]
+depends = [
+  "cgcwatch",
+  "demongrepwatch",
+]
+
+[tasks.cgcwatch]
+run = [
+  "./.claude/scripts/fix-cgc-optimizations.sh",
+  { task = "cgc index ." },
+  { task = "cgc watch ." },
+]
+
+[tasks.demongrepwatch]
+run = [
+  { task = "demongrep index ." },
+  { task = "demongrep serve ." },
+]
+
+[tasks.cgc]
+env.NEO4J_URI = "neo4j://localhost:7687"
+env.NEO4J_USERNAME = "neo4j"
+env.NEO4J_PASSWORD = "password"
+env.DEFAULT_DATABASE = "neo4j"
+run = "mise exec python@3.14.2 -- cgc"
+
+[tasks.demongrep]
+run = "~/.github.com/yxanul/demongrep/target/release/demongrep"
