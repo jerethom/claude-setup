@@ -15,10 +15,10 @@
     },
     "demongrep": {
       "type": "stdio",
-      "command": "~/.local/share/claude-setup/demongrep/target/release/demongrep",
+      "command": "sh",
       "args": [
-        "mcp",
-        "."
+        "-c",
+        "~/.local/share/claude-setup/demongrep/target/release/demongrep mcp ."
       ]
     },
     "CodeGraphContext": {
