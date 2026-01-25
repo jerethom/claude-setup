@@ -43,6 +43,7 @@ echo "📋 Copie des fichiers de configuration..."
 cp "$TEMP_DIR/$REPO_NAME/.claude/config/mise.toml" ./mise.toml
 cp "$TEMP_DIR/$REPO_NAME/.claude/config/mcp.docker-compose.yml" ./mcp.docker-compose.yml
 cp "$TEMP_DIR/$REPO_NAME/.claude/config/.cgcignore" ./.cgcignore
+cp "$TEMP_DIR/$REPO_NAME/.claude/config/.mcp.json" ./.mcp.json
 
 # Ajouter/mettre à jour le contenu de .cgcignore dans .gitignore
 echo "📝 Mise à jour du .gitignore..."

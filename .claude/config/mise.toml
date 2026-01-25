@@ -14,8 +14,8 @@ cp .claude/config/mcp.docker-compose.yml mcp.docker-compose.yml
 
 [tasks."setup:demongrep"]
 run = """
-mkdir -p ~/.github.com/yxanul
-cd ~/.github.com/yxanul
+mkdir -p ~/.local/share/claude-setup
+cd ~/.local/share/claude-setup
 git clone https://github.com/yxanul/demongrep.git || true
 cd demongrep
 git pull
@@ -72,4 +72,4 @@ env.DEFAULT_DATABASE = "neo4j"
 run = "mise exec python@3.14.2 -- cgc"
 
 [tasks.demongrep]
-run = "~/.github.com/yxanul/demongrep/target/release/demongrep"
+run = "~/.local/share/claude-setup/demongrep/target/release/demongrep"
