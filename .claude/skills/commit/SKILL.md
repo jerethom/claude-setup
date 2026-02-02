@@ -6,7 +6,6 @@ disable-model-invocation: true
 allowed-tools:
   - Bash
   - Read
-  - AskUserQuestion
 ---
 
 # Workflow de commit Git
@@ -60,18 +59,7 @@ git log --oneline -10
    - Ne JAMAIS commiter : `.env`, `credentials.json`, clés API, secrets
    - Avertir l'utilisateur si de tels fichiers sont détectés
 
-## Étape 3 : Validation avec l'utilisateur
-
-Si `$ARGUMENTS` est vide ou si les changements sont significatifs :
-
-Utilise `AskUserQuestion` pour présenter :
-- Résumé des fichiers à commiter
-- Message de commit proposé
-- Options : Valider / Modifier le message / Annuler
-
-Si `$ARGUMENTS` contient un message, l'utiliser directement.
-
-## Étape 4 : Création du commit
+## Étape 3 : Création du commit
 
 1. **Ajoute les fichiers pertinents** (préférer les fichiers spécifiques à `git add -A`) :
 
@@ -96,7 +84,7 @@ EOF
 git status
 ```
 
-## Étape 5 : Gestion des erreurs de pre-commit hook
+## Étape 4 : Gestion des erreurs de pre-commit hook
 
 Si le commit échoue à cause d'un hook pre-commit :
 
