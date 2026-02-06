@@ -20,11 +20,27 @@ allowed-tools:
   - mcp__demongrep__get_file_chunks
   - mcp__CodeGraphContext__find_code
   - mcp__CodeGraphContext__analyze_code_relationships
+  - mcp__playwright__browser_navigate
+  - mcp__playwright__browser_snapshot
+  - mcp__playwright__browser_take_screenshot
+  - mcp__playwright__browser_click
+  - mcp__playwright__browser_type
+  - mcp__playwright__browser_wait_for
+  - mcp__playwright__browser_close
 ---
 
 # Workflow d'implémentation de tâche
 
 Implémente : **$ARGUMENTS**
+
+## Principe fondamental : Cause racine
+
+**Si la tâche concerne la résolution d'un bug ou problème** :
+- Ne JAMAIS faire un patch ou un workaround rapide
+- Toujours investiguer pour trouver la **cause racine** du problème
+- Remonter la chaîne de données/appels jusqu'à identifier l'origine exacte
+- Corriger le problème à sa source, pas ses symptômes
+- Si l'utilisateur propose un patch, expliquer pourquoi corriger la cause racine est préférable
 
 ## Étapes séquentielles
 
@@ -189,12 +205,71 @@ Crée une tâche de vérification puis exécute :
 5. Lint : `mise run lint`
 6. Build : `mise run build`
 
+### 5. Vérification visuelle (si applicable)
+
+**Si la tâche a un impact visuel** (UI, pages web, composants frontend), effectue une vérification via le navigateur :
+
+1. **Demande l'URL à vérifier** avec `AskUserQuestion` si non fournie
+2. **Navigue vers la page** :
+   ```
+   mcp__playwright__browser_navigate:
+     url: "<URL de l'application>"
+   ```
+3. **Capture l'état de la page** :
+   ```
+   mcp__playwright__browser_snapshot
+   ```
+   ou pour une capture d'écran :
+   ```
+   mcp__playwright__browser_take_screenshot:
+     type: "png"
+   ```
+4. **Vérifie les éléments clés** :
+   - Présence des composants attendus
+   - Textes et labels corrects
+   - État des boutons/formulaires
+5. **Teste les interactions** si nécessaire :
+   - Click sur les éléments interactifs
+   - Saisie dans les champs
+   - Navigation entre les pages
+6. **Ferme le navigateur** :
+   ```
+   mcp__playwright__browser_close
+   ```
+
+**Critères de validation visuelle** :
+- L'UI correspond aux spécifications
+- Pas d'erreurs dans la console (`browser_console_messages`)
+- Les interactions fonctionnent comme prévu
+- Le responsive est correct (si applicable, utiliser `browser_resize`)
+
+**Critères de lisibilité** :
+- Contraste suffisant entre texte et fond
+- Taille de police lisible (minimum 14-16px pour le corps de texte)
+- Hiérarchie visuelle claire (titres, sous-titres, paragraphes)
+- Espacement cohérent entre les éléments
+
+**Critères UX** :
+- Affordance des éléments interactifs (boutons reconnaissables, liens clairs)
+- Feedback visuel sur les actions (hover, focus, loading states)
+- Messages d'erreur clairs et utiles
+- Navigation intuitive et prévisible
+- Temps de réponse acceptable
+
+**Critères UI** :
+- Cohérence visuelle (couleurs, typographie, espacements)
+- Alignement correct des éléments
+- Pas d'éléments qui débordent ou se chevauchent
+- Icônes et images de qualité appropriée
+- États visuels cohérents (normal, hover, active, disabled)
+
 ## Résumé final
 
 - Tâches complétées (`TaskList`)
 - Fichiers impactés
 - Changements effectués
 - Vérifications : format, lint, build
+- Vérification visuelle : résultat (si applicable)
 
 ---
 
@@ -204,3 +279,4 @@ Consulte ces fichiers si besoin de détails :
 
 - **[references/search-tools.md](references/search-tools.md)** : Documentation complète des outils demongrep et CodeGraphContext
 - **[references/task-management.md](references/task-management.md)** : Guide détaillé de TaskCreate, TaskUpdate et agents spécialisés
+- **[references/visual-verification.md](references/visual-verification.md)** : Guide complet des outils Playwright pour la vérification visuelle
