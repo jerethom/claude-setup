@@ -1,24 +1,24 @@
-# Gestion des tâches Claude Code
+# Gestion des taches Claude Code
 
-## Créer une tâche
+## Creer une tache
 
 ```
 TaskCreate:
-  subject: "Titre impératif" (ex: "Implémenter le handler CreateCase")
-  description: "Description détaillée avec contexte et critères d'acceptation"
-  activeForm: "Forme progressive" (ex: "Implémentant le handler CreateCase")
+  subject: "Titre imperatif" (ex: "Implementer le handler CreateCase")
+  description: "Description detaillee avec contexte et criteres d'acceptation"
+  activeForm: "Forme progressive" (ex: "Implementant le handler CreateCase")
 ```
 
-## Règles de création
+## Regles de creation
 
-- Tâches granulaires et indépendantes quand possible
-- Une tâche = une responsabilité claire
-- Inclure les fichiers concernés dans la description
-- Définir les dépendances avec `TaskUpdate` (addBlockedBy/addBlocks)
+- Taches granulaires et independantes quand possible
+- Une tache = une responsabilite claire
+- Inclure les fichiers concernes dans la description
+- Definir les dependances avec `TaskUpdate` (addBlockedBy/addBlocks)
 
-## Cycle de vie d'une tâche
+## Cycle de vie d'une tache
 
-### Démarrer une tâche
+### Demarrer une tache
 
 ```
 TaskUpdate:
@@ -26,7 +26,7 @@ TaskUpdate:
   status: "in_progress"
 ```
 
-### Compléter une tâche
+### Completer une tache
 
 ```
 TaskUpdate:
@@ -34,35 +34,62 @@ TaskUpdate:
   status: "completed"
 ```
 
-### Définir les dépendances
+### Definir les dependances
 
 ```
 TaskUpdate:
   taskId: "<id>"
-  addBlockedBy: ["<id_tâche_prérequise>"]
+  addBlockedBy: ["<id_tache_prerequise>"]
 ```
 
 ```
 TaskUpdate:
   taskId: "<id>"
-  addBlocks: ["<id_tâche_dépendante>"]
+  addBlocks: ["<id_tache_dependante>"]
 ```
 
 ## Afficher la progression
 
-Utiliser `TaskList` régulièrement pour afficher l'état d'avancement.
+Utiliser `TaskList` regulierement pour afficher l'etat d'avancement.
 
-Utiliser `TaskGet` avec un ID pour récupérer les détails complets d'une tâche.
+Utiliser `TaskGet` avec un ID pour recuperer les details complets d'une tache.
 
-## Agents spécialisés disponibles
+## Selection d'agent
 
-Utiliser l'outil `Task` avec le `subagent_type` approprié :
+### Agents custom du projet
+
+Verifie `.claude/agents/` pour les agents custom disponibles dans le projet courant.
+
+Deux agents custom generiques sont fournis avec le skill `/task` :
+
+| Agent | Role | Modele | Outils |
+|-------|------|--------|--------|
+| `analyzer` | Analyse read-only (cartographie, architecture, qualite) | haiku | Read, Glob, Grep |
+| `verifier` | Verification post-implementation (format, lint, build, tests, Playwright) | sonnet | Read, Bash, Glob, Grep, Playwright |
+
+### Agents built-in pour l'implementation
+
+Pour l'implementation, selectionner l'agent en fonction de la zone de code :
+
+1. **Agent custom du projet** : Si un agent custom specifique existe dans `.claude/agents/` pour la zone concernee, l'utiliser en priorite
+2. **`general-purpose`** : Choix par defaut, acces a tous les outils, adapte a toute situation
+3. **Agents voltagent-lang** : Pour une expertise langage specialisee :
+   - `voltagent-lang:golang-pro` pour Go
+   - `voltagent-lang:react-specialist` pour React
+   - `voltagent-lang:typescript-pro` pour TypeScript
+   - `voltagent-lang:python-pro` pour Python
+   - etc. (voir la liste complete des agents disponibles)
+
+### Principes de selection
+
+- Toujours consulter CLAUDE.md pour les conventions et commandes du projet
+- Injecter les conventions et commandes dans le prompt de delegation
+- L'agent d'implementation doit executer la commande de verification appropriee avant de terminer
+- En cas de doute, `general-purpose` est toujours un choix sur
+
+## Agents specialises generiques (exploration)
 
 | Agent | Usage |
 |-------|-------|
-| `Explore` | Exploration et recherche dans le code |
-| `Plan` | Planification d'implémentation |
-| `general-purpose` | Tâches générales multi-outils |
-| Agents voltagent-* | Agents spécialisés par domaine |
-
-Les agents ont accès à tous les outils : Read, Write, Edit, Bash, Glob, Grep, et outils MCP.
+| `Explore` | Exploration et recherche dans le code (read-only, rapide) |
+| `Plan` | Planification d'implementation (read-only) |

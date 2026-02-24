@@ -36,11 +36,20 @@ git diff HEAD
 git log --oneline -10
 ```
 
-## Étape 2 : Analyse et rédaction du message
+## Étape 2 : Regroupement logique des changements
 
-À partir des résultats :
+À partir des résultats, **regroupe les changements par groupe logique de commit**. Chaque commit doit être cohérent et autonome :
 
-1. **Identifie la nature des changements** :
+- Un commit par fonctionnalité, correction ou refactoring distinct
+- Ne pas mélanger des changements non liés dans un même commit
+- Exemple : si les changements incluent un fix + un refactoring + une nouvelle feature, cela fait 3 commits séparés
+
+## Étape 3 : Pour chaque groupe logique, créer un commit
+
+Répète les sous-étapes suivantes pour chaque groupe :
+
+### 3a. Identifie la nature du groupe
+
    - `feat:` nouvelle fonctionnalité
    - `fix:` correction de bug
    - `refactor:` refactoring sans changement de comportement
@@ -50,18 +59,20 @@ git log --oneline -10
    - `style:` formatage, pas de changement de code
    - `perf:` amélioration de performance
 
-2. **Rédige un message de commit** :
+### 3b. Rédige un message de commit
+
    - Première ligne : type + description concise (< 72 caractères)
    - Focalisé sur le **pourquoi**, pas le **quoi**
    - En anglais (convention standard) ou selon le style du projet
 
-3. **Vérifie les fichiers sensibles** :
+### 3c. Vérifie les fichiers sensibles
+
    - Ne JAMAIS commiter : `.env`, `credentials.json`, clés API, secrets
    - Avertir l'utilisateur si de tels fichiers sont détectés
 
-## Étape 3 : Création du commit
+### 3d. Stage et commit
 
-1. **Ajoute les fichiers pertinents** (préférer les fichiers spécifiques à `git add -A`) :
+1. **Ajoute uniquement les fichiers du groupe** (préférer les fichiers spécifiques à `git add -A`) :
 
 ```bash
 git add <fichier1> <fichier2> ...
@@ -78,7 +89,7 @@ EOF
 )"
 ```
 
-3. **Vérifie le succès** :
+3. **Vérifie le succès** avant de passer au groupe suivant :
 
 ```bash
 git status

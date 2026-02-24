@@ -1,6 +1,9 @@
 ---
 name: explore
-description: Explorer une demande utilisateur et générer un mini PRD (Product Requirements Document).
+description: >
+  Clarifie une demande utilisateur via des questions ciblées, analyse le code existant,
+  puis génère un mini PRD (Product Requirements Document) structuré.
+  Utiliser ce skill en amont d'une implémentation pour cadrer le périmètre et les spécifications.
 argument-hint: <fonctionnalité à explorer>
 disable-model-invocation: true
 allowed-tools:
@@ -19,7 +22,9 @@ Explore et clarifie : **$ARGUMENTS**
 
 ## Phase 1 : Clarification
 
-Utilise `AskUserQuestion` pour comprendre rapidement :
+Si la demande est déjà suffisamment claire et détaillée, passe directement à la Phase 2.
+
+Sinon, utilise `AskUserQuestion` pour comprendre rapidement :
 - **Quoi** : Quelle fonctionnalité / quel problème ?
 - **Pourquoi** : Quel est le besoin utilisateur ?
 - **Pour qui** : Qui sont les utilisateurs cibles ?
@@ -27,15 +32,23 @@ Utilise `AskUserQuestion` pour comprendre rapidement :
 
 **Règles :**
 - 1 à 3 questions max par tour
-- Questions à choix multiples quand possible
-- Arrête dès que l'essentiel est clair
+- Questions à choix multiples quand possible (2-4 options par question)
+- Arrête dès que l'essentiel est clair — ne pose pas de questions dont la réponse est évidente
 
 ## Phase 2 : Analyse du code existant
 
-Si pertinent, explore rapidement le code pour identifier :
-- Les fichiers/modules concernés
-- Les patterns existants à réutiliser
-- Les points d'intégration
+Commence par lire `CLAUDE.md` à la racine du projet pour comprendre l'architecture, les conventions et les outils disponibles.
+
+Ensuite, explore méthodiquement le code pour identifier :
+
+1. **Architecture concernée** : Quels modules/couches sont impactés ?
+   - Utilise `Glob` pour localiser les fichiers pertinents
+   - Utilise `Grep` pour trouver les patterns et références existants
+2. **Patterns existants** : Comment des fonctionnalités similaires sont-elles déjà implémentées ?
+   - Utilise `mcp__demongrep__semantic_search` pour trouver du code sémantiquement proche
+   - Utilise `mcp__CodeGraphContext__find_code` pour explorer les relations entre composants
+3. **Points d'intégration** : Où et comment la nouvelle fonctionnalité se branche sur l'existant ?
+   - Identifie les interfaces, handlers, routes ou composants à étendre
 
 ## Phase 3 : Génération du mini PRD
 
@@ -86,4 +99,4 @@ Affiche un résumé du PRD et demande :
 
 ---
 
-Pose tes premières questions pour clarifier la demande.
+Pose tes premières questions pour clarifier la demande — ou passe directement à l'analyse si la demande est déjà claire.
