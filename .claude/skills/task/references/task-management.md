@@ -1,24 +1,28 @@
-# Gestion des taches Claude Code
+# Gestion des tâches et agents
 
-## Creer une tache
+## Créer une tâche
 
 ```
 TaskCreate:
-  subject: "Titre imperatif" (ex: "Implementer le handler CreateCase")
-  description: "Description detaillee avec contexte et criteres d'acceptation"
-  activeForm: "Forme progressive" (ex: "Implementant le handler CreateCase")
+  subject: "Titre impératif" (ex: "Implémenter le handler CreateCase")
+  description: "Description détaillée avec contexte et critères d'acceptation"
+  activeForm: "Forme progressive" (ex: "Implémentant le handler CreateCase")
 ```
 
-## Regles de creation
+## Règles de création
 
-- Taches granulaires et independantes quand possible
-- Une tache = une responsabilite claire
-- Inclure les fichiers concernes dans la description
-- Definir les dependances avec `TaskUpdate` (addBlockedBy/addBlocks)
+- Tâches granulaires et indépendantes quand possible
+- Une tâche = une responsabilité claire
+- Inclure les fichiers concernés dans la description
+- Définir les dépendances avec `TaskUpdate` (addBlockedBy/addBlocks)
 
-## Cycle de vie d'une tache
+## Cycle de vie d'une tâche
 
-### Demarrer une tache
+```
+pending → in_progress → completed
+```
+
+### Démarrer une tâche
 
 ```
 TaskUpdate:
@@ -26,7 +30,7 @@ TaskUpdate:
   status: "in_progress"
 ```
 
-### Completer une tache
+### Compléter une tâche
 
 ```
 TaskUpdate:
@@ -34,62 +38,88 @@ TaskUpdate:
   status: "completed"
 ```
 
-### Definir les dependances
+### Définir les dépendances
 
 ```
 TaskUpdate:
   taskId: "<id>"
-  addBlockedBy: ["<id_tache_prerequise>"]
+  addBlockedBy: ["<id_tâche_prérequise>"]
 ```
 
 ```
 TaskUpdate:
   taskId: "<id>"
-  addBlocks: ["<id_tache_dependante>"]
+  addBlocks: ["<id_tâche_dépendante>"]
 ```
 
 ## Afficher la progression
 
-Utiliser `TaskList` regulierement pour afficher l'etat d'avancement.
+- `TaskList` : vue d'ensemble de toutes les tâches
+- `TaskGet` avec un ID : détails complets d'une tâche
 
-Utiliser `TaskGet` avec un ID pour recuperer les details complets d'une tache.
+## Déléguer à un sous-agent avec `Agent`
 
-## Selection d'agent
+> **Note** : L'outil `Task` a été renommé `Agent` en v2.1.63. Les deux noms fonctionnent.
 
-### Agents custom du projet
+### Paramètres de l'outil Agent
 
-Verifie `.claude/agents/` pour les agents custom disponibles dans le projet courant.
+| Paramètre | Description |
+|-----------|-------------|
+| `subagent_type` | Type d'agent à utiliser (voir tableau ci-dessous) |
+| `description` | Description courte (3-5 mots) de ce que fait l'agent |
+| `prompt` | Instructions détaillées pour l'agent |
+| `model` | Override de modèle : `haiku` (rapide, économique), `sonnet` (équilibré), `opus` (puissant) |
+| `run_in_background` | `true` pour exécuter en arrière-plan sans bloquer |
+| `isolation` | `worktree` pour travailler sur une copie isolée du repo (git worktree) |
+| `mode` | Mode de permission : `default`, `acceptEdits`, `dontAsk`, `bypassPermissions`, `plan` |
 
-Deux agents custom generiques sont fournis avec le skill `/task` :
+### Stratégie de routage de modèle
 
-| Agent | Role | Modele | Outils |
-|-------|------|--------|--------|
-| `analyzer` | Analyse read-only (cartographie, architecture, qualite) | haiku | Read, Glob, Grep |
-| `verifier` | Verification post-implementation (format, lint, build, tests, Playwright) | sonnet | Read, Bash, Glob, Grep, Playwright |
+| Tâche | Modèle recommandé |
+|-------|-------------------|
+| Exploration, recherche, analyse read-only | `haiku` (via agent `Explore`) |
+| Implémentation standard, corrections | `sonnet` |
+| Tâches complexes, architecture, refactoring majeur | `opus` (ou `inherit` si déjà sur Opus) |
 
-### Agents built-in pour l'implementation
-
-Pour l'implementation, selectionner l'agent en fonction de la zone de code :
-
-1. **Agent custom du projet** : Si un agent custom specifique existe dans `.claude/agents/` pour la zone concernee, l'utiliser en priorite
-2. **`general-purpose`** : Choix par defaut, acces a tous les outils, adapte a toute situation
-3. **Agents voltagent-lang** : Pour une expertise langage specialisee :
-   - `voltagent-lang:golang-pro` pour Go
-   - `voltagent-lang:react-specialist` pour React
-   - `voltagent-lang:typescript-pro` pour TypeScript
-   - `voltagent-lang:python-pro` pour Python
-   - etc. (voir la liste complete des agents disponibles)
-
-### Principes de selection
-
-- Toujours consulter CLAUDE.md pour les conventions et commandes du projet
-- Injecter les conventions et commandes dans le prompt de delegation
-- L'agent d'implementation doit executer la commande de verification appropriee avant de terminer
-- En cas de doute, `general-purpose` est toujours un choix sur
-
-## Agents specialises generiques (exploration)
+### Agents spécialisés disponibles
 
 | Agent | Usage |
 |-------|-------|
-| `Explore` | Exploration et recherche dans le code (read-only, rapide) |
-| `Plan` | Planification d'implementation (read-only) |
+| `Explore` | Exploration et recherche read-only (modèle Haiku, rapide) |
+| `Plan` | Planification d'implémentation (read-only) |
+| `general-purpose` | Tâches multi-étapes nécessitant tous les outils |
+
+**Agents par langage** (`voltagent-lang:*`) :
+
+| Agent | Usage |
+|-------|-------|
+| `voltagent-lang:golang-pro` | Go |
+| `voltagent-lang:javascript-pro` | JavaScript |
+| `voltagent-lang:typescript-pro` | TypeScript |
+| `voltagent-lang:python-pro` | Python |
+| `voltagent-lang:react-specialist` | React |
+| `voltagent-lang:rust-engineer` | Rust |
+| `voltagent-lang:sql-pro` | SQL, requêtes BDD |
+
+**Agents par domaine** (`voltagent-core-dev:*`, `voltagent-infra:*`, etc.) :
+
+| Agent | Usage |
+|-------|-------|
+| `voltagent-core-dev:backend-developer` | Backend API, services |
+| `voltagent-core-dev:frontend-developer` | UI, composants frontend |
+| `voltagent-core-dev:fullstack-developer` | Feature complète bout en bout |
+| `voltagent-infra:devops-engineer` | CI/CD, infrastructure |
+| `voltagent-qa-sec:code-reviewer` | Revue de code |
+| `voltagent-qa-sec:test-automator` | Tests automatisés |
+| `voltagent-qa-sec:debugger` | Diagnostic et résolution de bugs |
+| `voltagent-dev-exp:refactoring-specialist` | Refactoring |
+| `voltagent-data-ai:postgres-pro` | PostgreSQL |
+
+## Bonnes pratiques de délégation
+
+1. **Prompt détaillé** : Inclure la tâche, le contexte du code (fichiers, patterns), les instructions, et les critères de succès
+2. **Contexte complet** : Transmettre les résultats de l'analyse (étape 1) au sous-agent
+3. **Critères mesurables** : Définir clairement ce qui constitue un succès
+4. **Un agent = une responsabilité** : Ne pas surcharger un agent avec plusieurs tâches indépendantes
+5. **Parallélisme** : Lancer les tâches indépendantes en parallèle avec `run_in_background: true`
+6. **Isolation** : Utiliser `isolation: worktree` quand plusieurs agents modifient le même repo

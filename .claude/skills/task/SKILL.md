@@ -1,7 +1,10 @@
 ---
 name: task
-description: Implementer une tache technique avec analyse parallele, planification validee, implementation deleguee, et verification. Utiliser pour des taches de developpement necessitant une analyse prealable du code existant.
-argument-hint: <description de la tache>
+description: >-
+  Implémente des tâches techniques avec analyse du code existant, planification validée par l'utilisateur,
+  et vérification automatique. Utiliser quand l'utilisateur demande d'implémenter une fonctionnalité,
+  corriger un bug, refactorer du code, ou toute tâche de développement nécessitant une analyse préalable.
+argument-hint: <description de la tâche>
 disable-model-invocation: true
 allowed-tools:
   - Read
@@ -10,7 +13,7 @@ allowed-tools:
   - Bash
   - Glob
   - Grep
-  - Task
+  - Agent
   - TaskCreate
   - TaskUpdate
   - TaskList
@@ -22,336 +25,174 @@ allowed-tools:
   - mcp__CodeGraphContext__analyze_code_relationships
 ---
 
-# Workflow d'implementation de tache
+# Workflow d'implémentation de tâche
 
-Implemente : **$ARGUMENTS**
+Implémente : **$ARGUMENTS**
 
-## Principe fondamental : Cause racine
+## Quand NE PAS utiliser ce workflow
 
-**Si la tache concerne la resolution d'un bug ou probleme** :
-- Ne JAMAIS faire un patch ou un workaround rapide
-- Toujours investiguer pour trouver la **cause racine** du probleme
-- Remonter la chaine de donnees/appels jusqu'a identifier l'origine exacte
-- Corriger le probleme a sa source, pas ses symptomes
-- Si l'utilisateur propose un patch, expliquer pourquoi corriger la cause racine est preferable
+- Changement trivial (typo, rename simple, ajout d'un commentaire) → édite directement
+- Question ou exploration sans implémentation → utilise `/explore`
+- Tâche de commit → utilise `/commit`
 
----
+## Checklist de progression
 
-## Phase 0 : Verification de l'etat initial
+Copie cette checklist et coche au fur et à mesure :
 
-Avant de commencer :
-
-1. **Verifier la reprise de session** : Lis `.task-progress.md` a la racine du projet. Si le fichier existe, affiche son contenu et demande a l'utilisateur :
-   ```
-   AskUserQuestion:
-     - "Un checkpoint de tache precedente a ete trouve. Que faire ?"
-       Options: "Reprendre la tache" / "Ignorer et recommencer"
-   ```
-   Si reprise, sauter directement a la phase indiquee dans le checkpoint.
-
-2. **Verifier l'etat git** : Execute `git status --short` pour detecter des changements non commites. Si des changements existent, informe l'utilisateur brievement.
-
----
-
-## Phase 1 : Analyse parallele
-
-Lance **2 a 3 agents `analyzer` en parallele** (agent custom read-only, modele haiku) :
-
-### Agent 1 : Cartographie des fichiers
 ```
-Task:
-  subagent_type: analyzer
-  model: haiku
-  description: "Cartographier fichiers pour $0"
+Progression :
+- [ ] Étape 1 : Analyse du code existant
+- [ ] Étape 2 : Plan présenté et validé par l'utilisateur
+- [ ] Étape 3 : Implémentation déléguée aux sous-agents
+- [ ] Étape 4 : Vérification finale (format, lint, build)
+```
+
+## Étapes séquentielles
+
+### 1. Analyse du code existant
+
+Lance un agent `Explore` (read-only, rapide) pour analyser le code :
+
+```
+Agent:
+  subagent_type: Explore
+  description: "Analyser code pour $0"
   prompt: |
-    Mission : cartographie des fichiers
+    Analyse approfondie du code existant pour : $ARGUMENTS
 
-    Tache a analyser : $ARGUMENTS
+    ## Stratégie de recherche (dans cet ordre)
 
-    Identifie :
-    1. Les fichiers a modifier (avec ce qui doit changer dans chacun)
-    2. Les fichiers de reference a consulter (patterns a suivre, exemples existants)
+    ### A. Recherche sémantique — `mcp__demongrep__semantic_search`
+    Commence TOUJOURS par une recherche sémantique pour trouver le code lié à la tâche.
+    Fais plusieurs requêtes avec des angles différents :
+    - La fonctionnalité ou le concept décrit dans la tâche
+    - Les noms de domaine métier associés
+    - Les patterns d'implémentation attendus (handler, service, repository, etc.)
 
-    Retourne UNIQUEMENT les tableaux markdown, pas de prose.
+    ### B. Graphe de code — `mcp__CodeGraphContext__find_code` et `analyze_code_relationships`
+    Utilise `find_code` pour localiser les fonctions, types et structures identifiés en A.
+    Puis analyse les relations avec `analyze_code_relationships` :
+    - `find_callers` / `find_all_callers` : qui appelle ce code ? (impact si modifié)
+    - `find_callees` / `find_all_callees` : que fait ce code ? (dépendances sortantes)
+    - `find_importers` : qui importe ce module ?
+    - `module_deps` : dépendances du module
+    - `who_modifies` : qui modifie une variable/propriété clé
+    - `class_hierarchy` / `overrides` : si du polymorphisme est impliqué
+
+    ### C. Recherche structurelle — Glob et Grep
+    Complète avec Glob/Grep pour :
+    - Trouver les fichiers de test associés
+    - Vérifier les conventions de nommage
+    - Localiser les fichiers de configuration (mise.toml, etc.)
+
+    ## Rapport attendu
+
+    ### 1. Cartographie du code
+    - Fichiers à modifier (par priorité) : chemin, rôle, modifications prévues
+    - Fichiers de référence (patterns à suivre, conventions observées)
+
+    ### 2. Architecture et patterns
+    - Couche concernée (domain, application, infrastructure)
+    - Patterns utilisés et exemples de code réutilisables avec chemin:ligne
+
+    ### 3. Dépendances (issues du graphe de code)
+    - Entrantes : appelants directs et indirects, impact si modifié
+    - Sortantes : fonctions appelées, imports requis
+    - Modules dépendants
+
+    ### 4. Points d'attention
+    - Risques : breaking changes, tests à mettre à jour
+    - Contraintes de version (vérifier mise.toml)
+
+    ### 5. Recommandations
+    - Approche suggérée avec étapes ordonnées
 ```
 
-### Agent 2 : Architecture et dependances
-```
-Task:
-  subagent_type: analyzer
-  model: haiku
-  description: "Analyser architecture pour $0"
-  prompt: |
-    Mission : architecture et dependances
+Attends le résultat avant de continuer.
 
-    Tache a analyser : $ARGUMENTS
+### 2. Plan et validation
 
-    Identifie :
-    1. Les couches et modules concernes
-    2. Les patterns utilises dans le projet
-    3. Les dependances entrantes (appelants, impact si modifie)
-    4. Les dependances sortantes (appeles)
-    5. Les imports requis
-    6. Les risques (breaking changes, tests a mettre a jour)
+Présente le plan à l'utilisateur :
 
-    Retourne UNIQUEMENT les tableaux markdown, pas de prose.
-```
+**Objectif** : [Une phrase résumant ce qui sera fait]
 
-### Agent 3 (conditionnel) : Qualite
-Lance cet agent SEULEMENT si la tache implique un refactoring ou un bug complexe :
-```
-Task:
-  subagent_type: analyzer
-  model: haiku
-  description: "Analyser qualite pour $0"
-  prompt: |
-    Mission : qualite du code
-
-    Tache a analyser : $ARGUMENTS
-
-    Identifie :
-    1. Fonctions complexes (complexite cyclomatique > 10)
-    2. Code mort detecte dans les zones concernees
-    3. Zones de refactoring potentiel
-
-    Retourne UNIQUEMENT les tableaux markdown, pas de prose.
-```
-
-**IMPORTANT** : Lance les 2-3 agents en parallele dans un seul message avec plusieurs appels `Task`.
-
----
-
-## Phase 1b : Synthese de l'analyse
-
-Apres reception des resultats des agents analyzer, produis une **synthese compacte** (max 20 lignes) :
-
-```markdown
-### Synthese
-
-**Fichiers a modifier** : `fichier1`, `fichier2`, ...
-**Fichiers de reference** : `exemple` (pattern X), ...
-**Couches** : couche1 -> couche2 -> couche3
-**Pattern** : patterns identifies
-**Risques** : [liste courte]
-**Approche** : [1-3 etapes cles]
-```
-
-Cette synthese sera reutilisee dans les prompts de delegation (Phase 3). Ne pas transmettre les tableaux bruts aux agents d'implementation.
-
----
-
-## Phase 2 : Plan, validation et checkpoint
-
-### Presentation du plan
-
-Presente le plan a l'utilisateur :
-
----
-
-## Plan d'implementation
-
-**Objectif** : [Une phrase resumant ce qui sera fait]
-
-### Etapes
-
-| # | Action | Fichier | Detail |
+| # | Action | Fichier | Détail |
 |---|--------|---------|--------|
-| 1 | Creer/Modifier/Supprimer | `chemin/fichier` | Description courte |
-| 2 | ... | ... | ... |
+| 1 | Créer/Modifier/Supprimer | `chemin/fichier` | Description courte |
 
-### Apercu des changements
+**Impact** :
+- Tests : À créer / À modifier / Aucun
+- API : Breaking change / Compatible / Aucun
+- Dépendances : Nouvelles / Aucune
 
-**Etape 1 : [Nom]**
-```
-+ Ce qui sera ajoute
-~ Ce qui sera modifie
-- Ce qui sera supprime
-```
+Ensuite :
 
-### Impact
-
-- **Tests** : A creer / A modifier / Aucun
-- **API** : Breaking change / Compatible / Aucun
-- **Dependances** : Nouvelles / Aucune
-
----
-
-### Creation des taches et validation
-
-1. Cree les taches avec `TaskCreate` (voir references/task-management.md)
-
-2. **Demande validation** avec `AskUserQuestion` :
+1. Crée les tâches avec `TaskCreate` (voir [references/task-management.md](references/task-management.md))
+2. Pour les tâches avec dépendances, utilise `TaskUpdate` avec `addBlockedBy`/`addBlocks`
+3. **Demande validation** avec `AskUserQuestion` :
    - Valider et continuer
    - Modifier le plan
    - Annuler
 
-3. **Checkpoint** : Apres validation, ecris `.task-progress.md` :
-   ```markdown
-   # Task Progress
-   ## Tache : $ARGUMENTS
-   ## Phase : 3 (implementation)
-   ## Taches
-   - [ ] Tache 1 : description
-   - [ ] Tache 2 : description
-   ## Derniere mise a jour : [timestamp]
+### 3. Implémentation
+
+**Tu ne codes PAS toi-même.** Délègue TOUTE l'implémentation à des sous-agents **spécialisés** dans le langage ou le domaine de la tâche.
+
+Pour chaque tâche :
+
+1. `TaskUpdate` → status: `in_progress`
+2. Délègue à un sous-agent spécialisé avec `Agent` :
    ```
+   Agent:
+     subagent_type: [agent spécialisé : voltagent-lang:golang-pro, voltagent-lang:javascript-pro, voltagent-lang:react-specialist, etc.]
+     description: "Implémenter [nom de la tâche]"
+     model: sonnet  # ou inherit pour les tâches complexes nécessitant Opus
+     prompt: |
+       ## Tâche
+       [Description complète]
 
----
+       ## Contexte du code
+       [Résumé de l'analyse : fichiers concernés, patterns à suivre, conventions]
 
-## Phase 3 : Implementation deleguee
+       ## Instructions
+       1. Lis les fichiers nécessaires
+       2. Implémente en suivant les patterns existants du projet
+       3. Vérifie les versions de langages dans mise.toml
+       4. Formate avec les outils du projet : mise run format (ou mise exec -- <formateur>)
 
-**IMPORTANT** : Tu ne dois PAS coder toi-meme. Delegue TOUTE l'implementation aux agents specialises.
+       ## Critères de succès
+       - [Critère 1]
+       - [Critère 2]
+   ```
+3. Attends le résultat du sous-agent
+4. `TaskUpdate` → status: `completed`
+5. `TaskList` pour afficher la progression
 
-### Selection dynamique de l'agent
+**Parallélisme** : Pour les tâches indépendantes (sans dépendances), lance plusieurs agents en parallèle avec `run_in_background: true`. Pour les modifications sur les mêmes fichiers, utilise `isolation: worktree` pour éviter les conflits.
 
-Pour chaque tache, determine l'agent appropriate :
+### 4. Vérification finale
 
-1. **Verifie les agents custom du projet** : Lis `.claude/agents/` pour voir si un agent custom correspond a la zone de code
-2. **Sinon, utilise un agent built-in** :
-   - `general-purpose` comme choix par defaut (acces a tous les outils)
-   - Ou un agent voltagent-lang specialise si le langage est clairement identifie (ex: `voltagent-lang:golang-pro`, `voltagent-lang:react-specialist`, `voltagent-lang:typescript-pro`, etc.)
-3. **Consulte CLAUDE.md** pour extraire les conventions et commandes specifiques a injecter dans le prompt de delegation
-
-### Pour chaque tache
-
-1. `TaskUpdate` -> status: `in_progress`
-2. **Delegue a l'agent appropriate** :
-
-```
-Task:
-  subagent_type: [agent custom | general-purpose | voltagent-lang:*]
-  description: "Implementer [nom de la tache]"
-  prompt: |
-    ## Objectif
-    [Description claire de ce qui doit etre fait]
-
-    ## Fichiers concernes
-    - `chemin/fichier` : ce qui doit changer
-
-    ## Patterns a suivre
-    - Voir `chemin/exemple` pour le pattern [X]
-
-    ## Conventions du projet
-    [Extraites de CLAUDE.md : commandes de format, lint, build, repertoires generes, etc.]
-
-    ## Contraintes
-    - [Contraintes specifiques de la tache]
-
-    ## Criteres de succes
-    - [Critere 1]
-    - [Critere 2]
-
-    ## Verification
-    - Consulter CLAUDE.md pour la commande de verification appropriee et l'executer avant de terminer
-```
-
-3. **Phase 3b : Verification post-tache**
-
-   Apres le retour de chaque sous-agent, execute la commande de build/check appropriee telle que decrite dans CLAUDE.md pour la zone modifiee.
-
-   **Strategie de recovery** (max 2 tentatives) :
-   1. Si echec -> Re-delegue au meme agent avec le message d'erreur complet
-   2. Si 2eme echec -> `git checkout -- [fichiers modifies]` + escalade :
-      ```
-      AskUserQuestion:
-        - "L'implementation de [tache] a echoue 2 fois. Erreur : [message]. Que faire ?"
-          Options: "Reessayer manuellement" / "Modifier l'approche" / "Abandonner cette tache"
-      ```
-
-4. `TaskUpdate` -> status: `completed`
-5. **Mise a jour du checkpoint** : Coche la tache dans `.task-progress.md`
-6. `TaskList` pour afficher la progression
-
----
-
-## Phase 4 : Verification finale
-
-Delegue la verification technique au `verifier` :
+Crée une tâche de vérification puis exécute cette boucle de feedback :
 
 ```
-Task:
-  subagent_type: verifier
-  description: "Verifier qualite du code"
-  prompt: |
-    Verifie la qualite du code apres implementation.
-
-    ## Zones modifiees
-    [Liste des zones modifiees]
-
-    ## Fichiers modifies
-    [Liste des fichiers]
-
-    ## Verifications a effectuer
-    Consulte CLAUDE.md pour identifier les commandes de format, lint, build et test
-    appropriees aux zones modifiees, puis execute-les dans l'ordre :
-    1. Formatage
-    2. Lint
-    3. Build / Type check
-    4. Tests
-
-    Retourne un rapport structure avec le resultat de chaque verification.
+Boucle de vérification (max 3 itérations) :
+1. Format  : mise run format (ou mise exec -- <formateur adapté au langage>)
+2. Lint    : mise run lint
+3. Build   : mise run build
+4. Si erreurs → corrige automatiquement → retour à l'étape 1
+5. Si succès → terminé
 ```
 
-Si le verifier remonte des erreurs de format/lint, corrige-les directement (ou re-delegue a l'agent appropriate).
+## Résumé final
 
----
-
-## Phase 5 : Verification visuelle (si applicable)
-
-**Si la tache a un impact visuel** (UI, composants frontend), delegue au `verifier` :
-
-```
-Task:
-  subagent_type: verifier
-  description: "Verifier visuellement l'UI"
-  prompt: |
-    Verifie visuellement l'implementation via Playwright.
-
-    ## URL a verifier
-    [URL ou demander a l'utilisateur]
-
-    ## Elements attendus
-    [Liste des composants/textes/interactions a verifier]
-
-    ## Criteres
-    - Lisibilite : contraste, taille police, hierarchie
-    - UX : affordance, feedback, navigation
-    - UI : coherence, alignement, pas de debordement
-    - Console : pas d'erreurs
-
-    Retourne un rapport structure.
-```
-
-Si l'URL n'est pas connue, demande-la d'abord a l'utilisateur avec `AskUserQuestion`.
-
----
-
-## Phase 6 : Nettoyage et resume
-
-1. **Supprime `.task-progress.md`** via Bash : `rm -f .task-progress.md`
-
-2. **Resume final** :
-
-```markdown
-## Resume
-
-**Taches completees** : [TaskList]
-**Fichiers impactes** : [liste]
-**Changements** : [description concise]
-**Verifications** :
-- Format : OK
-- Lint : OK
-- Build : OK
-- Tests : OK
-- Visuel : OK / N/A
-```
+- Tâches complétées (`TaskList`)
+- Fichiers impactés
+- Changements effectués
+- Résultat des vérifications : format, lint, build
 
 ---
 
 ## Ressources additionnelles
 
-Consulte ces fichiers si besoin de details :
-
-- **[references/search-tools.md](references/search-tools.md)** : Documentation des outils de recherche
-- **[references/task-management.md](references/task-management.md)** : Guide TaskCreate/TaskUpdate et selection d'agents
-- **[references/visual-verification.md](references/visual-verification.md)** : Guide Playwright pour la verification visuelle
+- **[references/search-tools.md](references/search-tools.md)** : Outils demongrep et CodeGraphContext
+- **[references/task-management.md](references/task-management.md)** : TaskCreate, TaskUpdate, agents spécialisés et options avancées
