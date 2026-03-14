@@ -44,7 +44,7 @@ Progression :
 - [ ] Étape 1 : Analyse du code existant
 - [ ] Étape 2 : Plan présenté et validé par l'utilisateur
 - [ ] Étape 3 : Implémentation déléguée aux sous-agents
-- [ ] Étape 4 : Vérification finale (format, lint, build)
+- [ ] Étape 4 : Vérification finale (checks techniques, revue de code)
 ```
 
 ## Étapes séquentielles
@@ -158,7 +158,7 @@ Pour chaque tâche :
        1. Lis les fichiers nécessaires
        2. Implémente en suivant les patterns existants du projet
        3. Vérifie les versions de langages dans mise.toml
-       4. Formate avec les outils du projet : mise run format (ou mise exec -- <formateur>)
+       4. Formate avec les outils du projet (consulte mise.toml ou la config du projet)
 
        ## Critères de succès
        - [Critère 1]
@@ -172,15 +172,36 @@ Pour chaque tâche :
 
 ### 4. Vérification finale
 
-Crée une tâche de vérification puis exécute cette boucle de feedback :
+Crée une tâche de vérification puis exécute les deux phases suivantes :
+
+#### Phase A — Checks techniques (découverte automatique)
 
 ```
-Boucle de vérification (max 3 itérations) :
-1. Format  : mise run format (ou mise exec -- <formateur adapté au langage>)
-2. Lint    : mise run lint
-3. Build   : mise run build
-4. Si erreurs → corrige automatiquement → retour à l'étape 1
-5. Si succès → terminé
+Découverte des commandes :
+1. Lis les fichiers de configuration du projet (mise.toml, package.json, Makefile, etc.)
+2. Identifie les commandes disponibles : format, lint, build, tests...
+3. Exécute les commandes trouvées
+
+Boucle de correction (max 3 itérations) :
+1. Exécute toutes les commandes identifiées
+2. Si erreurs → corrige automatiquement → retour à l'étape 1
+3. Si succès → passe à la Phase B
+```
+
+#### Phase B — Revue de cohérence par l'agent principal
+
+L'agent principal (toi) relis tous les fichiers modifiés et vérifie 3 dimensions :
+
+1. **Cohérence avec le plan** : l'implémentation respecte le plan validé à l'étape 2
+2. **Logique métier** : code correct, cas limites gérés
+3. **Intégration** : les composants s'intègrent entre eux et avec l'existant
+
+```
+Boucle de revue (max 2 itérations) :
+1. Lis tous les fichiers modifiés
+2. Vérifie les 3 dimensions ci-dessus
+3. Si problèmes → corrige → relance Phase A
+4. Si OK → terminé
 ```
 
 ## Résumé final
@@ -188,7 +209,8 @@ Boucle de vérification (max 3 itérations) :
 - Tâches complétées (`TaskList`)
 - Fichiers impactés
 - Changements effectués
-- Résultat des vérifications : format, lint, build
+- Résultat des vérifications : checks techniques (commandes exécutées et résultats)
+- Revue de cohérence : points vérifiés et corrections apportées
 
 ---
 
