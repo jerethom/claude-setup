@@ -123,3 +123,7 @@ TaskUpdate:
 4. **Un agent = une responsabilité** : Ne pas surcharger un agent avec plusieurs tâches indépendantes
 5. **Parallélisme** : Lancer les tâches indépendantes en parallèle avec `run_in_background: true`
 6. **Isolation** : Utiliser `isolation: worktree` quand plusieurs agents modifient le même repo
+7. **Outils MCP** : Les sous-agents héritent des serveurs MCP du projet. Mentionner les outils pertinents dans le prompt pour que l'agent les utilise :
+   - `demongrep` : recherche sémantique dans le code (`semantic_search`, `get_file_chunks`)
+   - `CodeGraphContext` : graphe de code, relations et dépendances (`find_code`, `analyze_code_relationships`)
+   - `context7` : documentation à jour des librairies (`resolve-library-id`, `query-docs`)

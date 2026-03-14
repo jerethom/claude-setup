@@ -164,6 +164,12 @@ Pour chaque tâche :
        - [Critère 1]
        - [Critère 2]
    ```
+
+> **Outils MCP disponibles pour les sous-agents** : Les sous-agents héritent des serveurs MCP du projet. Quand c'est pertinent, mentionne-les dans le prompt du sous-agent pour qu'il les utilise :
+> - **Recherche sémantique** (`mcp__demongrep__semantic_search`, `mcp__demongrep__get_file_chunks`) : explorer le code par similarité sémantique
+> - **Graphe de code** (`mcp__CodeGraphContext__find_code`, `mcp__CodeGraphContext__analyze_code_relationships`) : analyser les relations, appelants, dépendances
+> - **Documentation** (`mcp__context7__resolve-library-id`, `mcp__context7__query-docs`) : consulter la documentation à jour des librairies utilisées
+
 3. Attends le résultat du sous-agent
 4. `TaskUpdate` → status: `completed`
 5. `TaskList` pour afficher la progression
