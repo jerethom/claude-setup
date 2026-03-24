@@ -38,9 +38,24 @@ if [ -d .claude ]; then
 fi
 cp -r "$TEMP_DIR/$REPO_NAME/.claude" .
 
-# Copier les fichiers de config à la racine (écrase si existant)
+# Copier/merger les fichiers de config à la racine
 echo "📋 Copie des fichiers de configuration..."
-cp "$TEMP_DIR/$REPO_NAME/.claude/config/mise.toml" ./mise.toml
+MISE_MARKER_START="# >>> Claude Setup >>>"
+MISE_MARKER_END="# <<< Claude Setup <<<"
+MISE_SRC="$TEMP_DIR/$REPO_NAME/.claude/config/mise.toml"
+
+if [ ! -f mise.toml ]; then
+    cp "$MISE_SRC" ./mise.toml
+elif grep -q "$MISE_MARKER_START" mise.toml; then
+    sed -i.bak "/$MISE_MARKER_START/,/$MISE_MARKER_END/d" mise.toml
+    rm -f mise.toml.bak
+    cat "$MISE_SRC" >> mise.toml
+    echo "   (section Claude Setup mise à jour dans mise.toml)"
+else
+    cat "$MISE_SRC" >> mise.toml
+    echo "   (section Claude Setup ajoutée à mise.toml)"
+fi
+
 cp "$TEMP_DIR/$REPO_NAME/.claude/config/mcp.docker-compose.yml" ./mcp.docker-compose.yml
 cp "$TEMP_DIR/$REPO_NAME/.claude/config/.cgcignore" ./.cgcignore
 cp "$TEMP_DIR/$REPO_NAME/.claude/config/.mcp.json" ./.mcp.json

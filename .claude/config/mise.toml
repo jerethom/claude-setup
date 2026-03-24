@@ -1,3 +1,4 @@
+# >>> Claude Setup >>>
 [tasks.setup]
 depends = [
   "config",
@@ -8,7 +9,20 @@ depends = [
 
 [tasks.config]
 run = """
-cp .claude/config/mise.toml mise.toml
+MARKER_START="# >>> Claude Setup >>>"
+MARKER_END="# <<< Claude Setup <<<"
+SRC=".claude/config/mise.toml"
+
+if [ ! -f mise.toml ]; then
+  cp "$SRC" mise.toml
+elif grep -q "$MARKER_START" mise.toml; then
+  sed -i.bak "/$MARKER_START/,/$MARKER_END/d" mise.toml
+  rm -f mise.toml.bak
+  cat "$SRC" >> mise.toml
+else
+  cat "$SRC" >> mise.toml
+fi
+
 cp .claude/config/mcp.docker-compose.yml mcp.docker-compose.yml
 """
 
@@ -90,3 +104,4 @@ run = "mise exec python@3.14.2 -- cgc"
 
 [tasks.demongrep]
 run = "~/.local/share/claude-setup/demongrep/target/release/demongrep"
+# <<< Claude Setup <<<
