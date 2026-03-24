@@ -42,13 +42,30 @@ claude plugin install voltagent-meta
 claude plugin install voltagent-research
 """
 
+[tasks.update]
+run = "git pull"
+
 [tasks.docker]
 run = "docker compose -f mcp.docker-compose.yml up -d"
 
-[tasks.mcps]
+[tasks."mcps:setup"]
+run = [
+  "update",
+  "config",
+  "setup:cgc",
+  "setup:demongrep",
+]
+
+[tasks."mcps:parrallel"]
 depends = [
   "cgcwatch",
   "demongrepwatch",
+]
+
+[tasks."mcps"]
+run = [
+  { task = "mcps:setup" },
+  { task = "mcps:parrallel" },
 ]
 
 [tasks.cgcwatch]
