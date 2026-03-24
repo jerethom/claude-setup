@@ -41,7 +41,22 @@ claude plugin install voltagent-research
 """
 
 [tasks.update]
-run = "git pull"
+run = """
+REPO_URL="https://github.com/jerethom/claude-setup"
+LOCAL_REPO="$HOME/.local/share/claude-setup/repo"
+
+git pull
+
+if [ -d "$LOCAL_REPO/.git" ]; then
+  git -C "$LOCAL_REPO" pull
+else
+  mkdir -p "$(dirname "$LOCAL_REPO")"
+  git clone --depth 1 "$REPO_URL" "$LOCAL_REPO"
+fi
+
+rm -rf .claude
+cp -r "$LOCAL_REPO/.claude" .
+"""
 
 [tasks.docker]
 run = "docker compose -f mcp.docker-compose.yml up -d"
