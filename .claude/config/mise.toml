@@ -64,10 +64,10 @@ run = "docker compose -f mcp.docker-compose.yml up -d"
 
 [tasks."mcps:setup"]
 run = [
-  "update",
-  "config",
-  "setup:cgc",
-  "setup:demongrep",
+  { task = "update" },
+  { task = "config" },
+  { task = "setup:cgc" },
+  { task = "setup:demongrep" },
 ]
 
 [tasks."mcps:parrallel"]
