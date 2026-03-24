@@ -47,7 +47,7 @@ MISE_SRC="$TEMP_DIR/$REPO_NAME/.claude/config/mise.toml"
 if [ ! -f mise.toml ]; then
     cp "$MISE_SRC" ./mise.toml
 elif grep -q "$MISE_MARKER_START" mise.toml; then
-    sed -i.bak "/$MISE_MARKER_START/,/$MISE_MARKER_END/d" mise.toml
+    sed -i.bak "/^${MISE_MARKER_START}$/,/^${MISE_MARKER_END}$/d" mise.toml
     rm -f mise.toml.bak
     cat "$MISE_SRC" >> mise.toml
     echo "   (section Claude Setup mise à jour dans mise.toml)"
