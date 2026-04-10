@@ -8,13 +8,22 @@ depends = [
 ]
 
 [tasks.config]
-run = "./.claude/scripts/sync-config.sh"
+run = "mise exec python@3.14.2 -- python3 ./.claude/scripts/sync-config.py"
+run_windows = "mise exec python@3.14.2 -- python ./.claude/scripts/sync-config.py"
 
 [tasks."setup:demongrep"]
 run = """
 mkdir -p ~/.local/share/claude-setup
 cd ~/.local/share/claude-setup
 git clone https://github.com/yxanul/demongrep.git || true
+cd demongrep
+git pull
+mise exec rust@1.93.0 -- cargo build --release
+"""
+run_windows = """
+if not exist "%LOCALAPPDATA%\\claude-setup" mkdir "%LOCALAPPDATA%\\claude-setup"
+cd /d "%LOCALAPPDATA%\\claude-setup"
+git clone https://github.com/yxanul/demongrep.git 2>nul || cd .
 cd demongrep
 git pull
 mise exec rust@1.93.0 -- cargo build --release
@@ -45,8 +54,6 @@ run = """
 REPO_URL="https://github.com/jerethom/claude-setup"
 LOCAL_REPO="$HOME/.local/share/claude-setup/repo"
 
-git pull
-
 if [ -d "$LOCAL_REPO/.git" ]; then
   git -C "$LOCAL_REPO" pull
 else
@@ -56,6 +63,20 @@ fi
 
 rm -rf .claude
 cp -r "$LOCAL_REPO/.claude" .
+"""
+run_windows = """
+set REPO_URL=https://github.com/jerethom/claude-setup
+set LOCAL_REPO=%LOCALAPPDATA%\\claude-setup\\repo
+
+if exist "%LOCAL_REPO%\\.git" (
+  git -C "%LOCAL_REPO%" pull
+) else (
+  if not exist "%LOCAL_REPO%\\.." mkdir "%LOCAL_REPO%\\.."
+  git clone --depth 1 "%REPO_URL%" "%LOCAL_REPO%"
+)
+
+if exist .claude rmdir /s /q .claude
+xcopy /e /i /q "%LOCAL_REPO%\\.claude" .claude
 """
 
 [tasks.docker]
@@ -83,7 +104,12 @@ run = [
 
 [tasks.cgcwatch]
 run = [
-  "./.claude/scripts/fix-cgc-optimizations.sh",
+  "mise exec python@3.14.2 -- python3 ./.claude/scripts/fix-cgc-optimizations.py",
+  { task = "cgc index ." },
+  { task = "cgc watch ." },
+]
+run_windows = [
+  "mise exec python@3.14.2 -- python ./.claude/scripts/fix-cgc-optimizations.py",
   { task = "cgc index ." },
   { task = "cgc watch ." },
 ]
@@ -103,4 +129,5 @@ run = "mise exec python@3.14.2 -- cgc"
 
 [tasks.demongrep]
 run = "~/.local/share/claude-setup/demongrep/target/release/demongrep"
+run_windows = "%LOCALAPPDATA%\\claude-setup\\demongrep\\target\\release\\demongrep.exe"
 # <<< Claude Setup <<<

@@ -4,10 +4,18 @@ Configuration personnalisée pour Claude Code avec des outils MCP (CodeGraphCont
 
 ## Installation
 
+### macOS / Linux
+
 Exécute cette commande à la racine de ton projet :
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/jerethom/claude-setup/main/install.sh | bash
+```
+
+### Windows (PowerShell)
+
+```powershell
+irm https://raw.githubusercontent.com/jerethom/claude-setup/main/install.ps1 | iex
 ```
 
 Le script va :
@@ -47,3 +55,4 @@ mise run mcps     # Démarre CodeGraphContext et Demongrep
 - Git
 - Docker (pour Neo4j)
 - Connexion internet (pour l'installation)
+- **Windows uniquement** : Visual Studio Build Tools (pour compiler Demongrep en Rust)
