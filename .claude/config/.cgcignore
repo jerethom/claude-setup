@@ -1,11 +1,9 @@
-**/.claude/
 **/.demongrep.db/
 **/.fastembed_cache/
 **/.playwright-mcp/
 **/.codegraphcontext/
 **/.tanstack/
 **/.vite/
-**/CLAUDE.md
 **/.mcp.json
 **/neo4j_data/
 **/.nx/
