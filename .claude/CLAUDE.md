@@ -11,6 +11,16 @@ Utilise **mise** pour exécuter les commandes. Préfixe les commandes avec `mise
 
 Avant d'écrire du code, vérifie les versions des langages dans le fichier `mise.toml` à la racine du projet pour adapter la syntaxe utilisée.
 
+## Mode Plan
+
+En mode plan, utilise **en priorité** les outils MCP pour explorer le codebase :
+
+- `mcp__demongrep__semantic_search` pour la recherche sémantique
+- `mcp__CodeGraphContext__find_code` pour la recherche de code par mot-clé
+- `mcp__CodeGraphContext__analyze_code_relationships` pour comprendre les relations entre fonctions, modules et classes
+
+Réserve `Grep` et `Glob` comme fallback pour les recherches structurelles simples (noms de fichiers, patterns exacts).
+
 # Instructions de Recherche
 
 ## 1. Recherche sémantique (demongrep)
