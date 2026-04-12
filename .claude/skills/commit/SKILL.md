@@ -38,11 +38,13 @@ git log --oneline -10
 
 ## Étape 2 : Regroupement logique des changements
 
-À partir des résultats, **regroupe les changements par groupe logique de commit**. Chaque commit doit être cohérent et autonome :
+À partir des résultats, **regroupe les changements par groupe logique de commit**. Chaque commit doit être **atomique et fonctionnel** :
 
 - Un commit par fonctionnalité, correction ou refactoring distinct
 - Ne pas mélanger des changements non liés dans un même commit
 - Exemple : si les changements incluent un fix + un refactoring + une nouvelle feature, cela fait 3 commits séparés
+- **Chaque commit doit laisser le projet dans un état fonctionnel.** Si on fait un `git checkout` sur n'importe quel commit, le code doit compiler/s'exécuter correctement. Ne jamais commiter un état intermédiaire cassé (ex : un import sans le fichier importé, une fonction appelée mais pas encore définie, une migration sans le code qui l'utilise).
+- Si des fichiers sont interdépendants, ils doivent être dans le **même commit**. Préférer un commit plus gros mais fonctionnel à plusieurs petits commits cassés.
 
 ## Étape 3 : Pour chaque groupe logique, créer un commit
 
