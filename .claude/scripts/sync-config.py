@@ -47,17 +47,42 @@ def merge_with_markers(target: Path, source: Path, marker_start: str, marker_end
 
 
 def adapt_mcp_json(source: Path, target: Path):
-    """Copy .mcp.json, adapting demongrep paths for the current platform."""
-    data = json.loads(source.read_text(encoding="utf-8"))
+    """Copy .mcp.json, merging mcpServers to preserve user customizations."""
+    source_data = json.loads(source.read_text(encoding="utf-8"))
 
     if sys.platform == "win32":
         data_dir = Path(os.environ["LOCALAPPDATA"]) / "claude-setup"
         demongrep_bin = str(data_dir / "demongrep" / "target" / "release" / "demongrep.exe")
-        if "demongrep" in data.get("mcpServers", {}):
-            data["mcpServers"]["demongrep"]["command"] = "cmd"
-            data["mcpServers"]["demongrep"]["args"] = ["/c", f"{demongrep_bin} mcp ."]
+        if "demongrep" in source_data.get("mcpServers", {}):
+            source_data["mcpServers"]["demongrep"]["command"] = "cmd"
+            source_data["mcpServers"]["demongrep"]["args"] = ["/c", f"{demongrep_bin} mcp ."]
 
-    target.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    # Merge at mcpServers level if target already exists
+    if target.exists():
+        target_data = json.loads(target.read_text(encoding="utf-8"))
+        source_servers = source_data.get("mcpServers", {})
+        target_servers = target_data.get("mcpServers", {})
+
+        merged = {}
+        for key in sorted(set(source_servers) | set(target_servers)):
+            if key in target_servers and key not in source_servers:
+                merged[key] = target_servers[key]
+            elif key in source_servers and key not in target_servers:
+                merged[key] = source_servers[key]
+            elif key in target_servers:
+                # Both exist: keep local version (user may have customized)
+                merged[key] = target_servers[key]
+            else:
+                merged[key] = source_servers[key]
+
+        result = dict(source_data)
+        result["mcpServers"] = merged
+        for k in target_data:
+            if k not in result:
+                result[k] = target_data[k]
+        source_data = result
+
+    target.write_text(json.dumps(source_data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
 def update_gitignore(cgcignore: Path):

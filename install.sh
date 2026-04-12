@@ -30,19 +30,21 @@ fi
 echo "📥 Téléchargement de la configuration..."
 git clone --depth 1 "$REPO_URL" "$TEMP_DIR/$REPO_NAME" 2>/dev/null
 
-# Copier le dossier .claude à la racine du projet courant (supprime l'ancien si existant)
-echo "📁 Copie de la configuration .claude..."
+# Copier/mettre à jour le dossier .claude
 if [ -d .claude ]; then
-    rm -rf .claude
-    echo "   (ancienne configuration remplacée)"
+    echo "📁 Configuration existante detectee. Mise a jour intelligente..."
+    python3 "$TEMP_DIR/$REPO_NAME/.claude/scripts/smart-update.py" \
+        --upstream-dir "$TEMP_DIR/$REPO_NAME/.claude"
+else
+    echo "📁 Copie de la configuration .claude..."
+    cp -r "$TEMP_DIR/$REPO_NAME/.claude" .
 fi
-cp -r "$TEMP_DIR/$REPO_NAME/.claude" .
 
 # Copier/merger les fichiers de config à la racine
-echo "📋 Copie des fichiers de configuration..."
+echo "📋 Synchronisation des fichiers de configuration..."
 MISE_MARKER_START="# >>> Claude Setup >>>"
 MISE_MARKER_END="# <<< Claude Setup <<<"
-MISE_SRC="$TEMP_DIR/$REPO_NAME/.claude/config/mise.toml"
+MISE_SRC=".claude/config/mise.toml"
 
 if [ ! -f mise.toml ]; then
     cp "$MISE_SRC" ./mise.toml
@@ -56,9 +58,9 @@ else
     echo "   (section Claude Setup ajoutée à mise.toml)"
 fi
 
-cp "$TEMP_DIR/$REPO_NAME/.claude/config/mcp.docker-compose.yml" ./mcp.docker-compose.yml
-cp "$TEMP_DIR/$REPO_NAME/.claude/config/.cgcignore" ./.cgcignore
-cp "$TEMP_DIR/$REPO_NAME/.claude/config/.mcp.json" ./.mcp.json
+cp ".claude/config/mcp.docker-compose.yml" ./mcp.docker-compose.yml
+cp ".claude/config/.cgcignore" ./.cgcignore
+cp ".claude/config/.mcp.json" ./.mcp.json
 
 # Ajouter/mettre à jour le contenu de .cgcignore dans .gitignore
 echo "📝 Mise à jour du .gitignore..."
@@ -66,7 +68,6 @@ MARKER_START="# >>> Claude Setup - CGC ignore >>>"
 MARKER_END="# <<< Claude Setup - CGC ignore <<<"
 
 if [ -f .gitignore ]; then
-    # Supprimer l'ancienne section si elle existe (entre les marqueurs)
     if grep -q "$MARKER_START" .gitignore; then
         sed -i.bak "/$MARKER_START/,/$MARKER_END/d" .gitignore
         rm -f .gitignore.bak
@@ -77,10 +78,9 @@ else
     touch .gitignore
 fi
 
-# Ajouter la nouvelle section
 {
     echo "$MARKER_START"
-    cat "$TEMP_DIR/$REPO_NAME/.claude/config/.cgcignore"
+    cat ".claude/config/.cgcignore"
     echo "$MARKER_END"
 } >> .gitignore
 

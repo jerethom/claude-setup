@@ -31,25 +31,25 @@ try {
     Write-Host "Telechargement de la configuration..." -ForegroundColor Cyan
     git clone --depth 1 $REPO_URL "$TEMP_DIR\$REPO_NAME" 2>$null
 
-    # Copy .claude directory
-    Write-Host "Copie de la configuration .claude..." -ForegroundColor Cyan
+    # Copy or update .claude directory
     if (Test-Path .claude) {
-        Remove-Item -Recurse -Force .claude
-        Write-Host "   (ancienne configuration remplacee)"
+        Write-Host "Configuration existante detectee. Mise a jour intelligente..." -ForegroundColor Cyan
+        python "$TEMP_DIR\$REPO_NAME\.claude\scripts\smart-update.py" --upstream-dir "$TEMP_DIR\$REPO_NAME\.claude"
+    } else {
+        Write-Host "Copie de la configuration .claude..." -ForegroundColor Cyan
+        Copy-Item -Recurse -Force "$TEMP_DIR\$REPO_NAME\.claude" .\.claude
     }
-    Copy-Item -Recurse -Force "$TEMP_DIR\$REPO_NAME\.claude" .\.claude
 
     # Merge mise.toml with markers
-    Write-Host "Copie des fichiers de configuration..." -ForegroundColor Cyan
+    Write-Host "Synchronisation des fichiers de configuration..." -ForegroundColor Cyan
     $MISE_MARKER_START = "# >>> Claude Setup >>>"
     $MISE_MARKER_END = "# <<< Claude Setup <<<"
-    $MISE_SRC = "$TEMP_DIR\$REPO_NAME\.claude\config\mise.toml"
+    $MISE_SRC = ".claude\config\mise.toml"
     $MISE_SRC_CONTENT = Get-Content -Path $MISE_SRC -Raw -Encoding UTF8
 
     if (-not (Test-Path mise.toml)) {
         Copy-Item $MISE_SRC .\mise.toml
     } elseif ((Get-Content mise.toml -Raw -Encoding UTF8) -match [regex]::Escape($MISE_MARKER_START)) {
-        # Remove old section between markers
         $content = Get-Content mise.toml -Raw -Encoding UTF8
         $pattern = "(?s)" + [regex]::Escape($MISE_MARKER_START) + ".*?" + [regex]::Escape($MISE_MARKER_END) + "\r?\n?"
         $content = $content -replace $pattern, ""
@@ -62,9 +62,9 @@ try {
     }
 
     # Copy other config files
-    Copy-Item "$TEMP_DIR\$REPO_NAME\.claude\config\mcp.docker-compose.yml" .\mcp.docker-compose.yml -Force
-    Copy-Item "$TEMP_DIR\$REPO_NAME\.claude\config\.cgcignore" .\.cgcignore -Force
-    Copy-Item "$TEMP_DIR\$REPO_NAME\.claude\config\.mcp.json" .\.mcp.json -Force
+    Copy-Item ".claude\config\mcp.docker-compose.yml" .\mcp.docker-compose.yml -Force
+    Copy-Item ".claude\config\.cgcignore" .\.cgcignore -Force
+    Copy-Item ".claude\config\.mcp.json" .\.mcp.json -Force
 
     # Adapt .mcp.json for Windows (demongrep path)
     $mcpContent = Get-Content .\.mcp.json -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -92,7 +92,7 @@ try {
         New-Item -ItemType File -Path .gitignore | Out-Null
     }
 
-    $cgcIgnoreContent = Get-Content "$TEMP_DIR\$REPO_NAME\.claude\config\.cgcignore" -Raw -Encoding UTF8
+    $cgcIgnoreContent = Get-Content ".claude\config\.cgcignore" -Raw -Encoding UTF8
     $section = "`n$GI_MARKER_START`n$cgcIgnoreContent"
     if (-not $section.EndsWith("`n")) { $section += "`n" }
     $section += "$GI_MARKER_END`n"

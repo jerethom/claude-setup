@@ -50,41 +50,14 @@ claude plugin install voltagent-research
 """
 
 [tasks.update]
-run = """
-REPO_URL="https://github.com/jerethom/claude-setup"
-LOCAL_REPO="$HOME/.local/share/claude-setup/repo"
-
-if [ -d "$LOCAL_REPO/.git" ]; then
-  git -C "$LOCAL_REPO" pull
-else
-  mkdir -p "$(dirname "$LOCAL_REPO")"
-  git clone --depth 1 "$REPO_URL" "$LOCAL_REPO"
-fi
-
-rm -rf .claude
-cp -r "$LOCAL_REPO/.claude" .
-"""
-run_windows = """
-set REPO_URL=https://github.com/jerethom/claude-setup
-set LOCAL_REPO=%LOCALAPPDATA%\\claude-setup\\repo
-
-if exist "%LOCAL_REPO%\\.git" (
-  git -C "%LOCAL_REPO%" pull
-) else (
-  if not exist "%LOCAL_REPO%\\.." mkdir "%LOCAL_REPO%\\.."
-  git clone --depth 1 "%REPO_URL%" "%LOCAL_REPO%"
-)
-
-if exist .claude rmdir /s /q .claude
-xcopy /e /i /q "%LOCAL_REPO%\\.claude" .claude
-"""
+run = "mise exec python@3.14.2 -- python3 ./.claude/scripts/smart-update.py"
+run_windows = "mise exec python@3.14.2 -- python ./.claude/scripts/smart-update.py"
 
 [tasks.docker]
 run = "docker compose -f mcp.docker-compose.yml up -d"
 
 [tasks."mcps:setup"]
 run = [
-  { task = "update" },
   { task = "config" },
   { task = "setup:cgc" },
   { task = "setup:demongrep" },
