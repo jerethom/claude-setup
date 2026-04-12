@@ -1,0 +1,2 @@
+[tasks.test]
+run = "mise exec python@3.14.2 -- pytest tests/ -v --tb=short"
